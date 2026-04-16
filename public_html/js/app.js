@@ -298,9 +298,21 @@
     });
   })
   $("#search_episodes").on("click",function() {
-    var seasonNum = $("#season_id").val().replace(/^\D+/g, '');
+    var seasonTitle = ($("#season_id").val() || "").trim();
+    var seasonPositionRaw = $("#season_position").val();
+    var seasonNumMatch = seasonTitle.match(/\d+/);
+    var seasonNum = seasonNumMatch ? parseInt(seasonNumMatch[0], 10) : NaN;
+    if (isNaN(seasonNum)) {
+      var seasonPosition = parseInt(seasonPositionRaw, 10);
+      if (!isNaN(seasonPosition)) {
+        // Some imported series were saved with season positions starting at 0.
+        seasonNum = seasonPosition <= 0 ? 1 : seasonPosition;
+      } else {
+        seasonNum = 1;
+      }
+    }
     var d = {
-      "Season": seasonNum,
+      "Season": String(seasonNum),
       "apikey": apiKey,
       "t": $("#serie_name").val()
     };

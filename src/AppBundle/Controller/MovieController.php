@@ -539,6 +539,8 @@ class MovieController extends Controller
             $movie->setComment(true);
             $movie->setEnabled(true);
             $movie->setYear($year);
+            $movie->setTmdbId($id);
+            $movie->setImdbId($detail_poster->imdb_id ?? "");
             // get poster Movies image 
 
             $url =  "https://image.tmdb.org/t/p/original".$poster_path;

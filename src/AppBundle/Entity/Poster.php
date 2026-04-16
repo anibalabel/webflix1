@@ -88,6 +88,18 @@ class Poster
     private $imdb;
 
     /**
+     * @var string
+     * @ORM\Column(name="imdb_id", type="string", length=20, nullable=false, options={"default":""})
+     */
+    private $imdb_id = "";
+
+    /**
+     * @var string
+     * @ORM\Column(name="tmdb_id", type="string", length=20, nullable=false, options={"default":""})
+     */
+    private $tmdb_id = "";
+
+    /**
     * @ORM\OneToMany(targetEntity="Rate", mappedBy="poster",cascade={"persist", "remove"})
     * @ORM\OrderBy({"created" = "desc"})
     */
@@ -1171,6 +1183,44 @@ class Poster
     public function setImdb($imdb)
     {
         $this->imdb = $imdb;
+        return $this;
+    }
+
+    /**
+    * Get tmdb_id
+    * @return
+    */
+    public function getTmdbId()
+    {
+        return $this->tmdb_id;
+    }
+
+    /**
+    * Set tmdb_id
+    * @return $this
+    */
+    public function setTmdbId($tmdbId)
+    {
+        $this->tmdb_id = $tmdbId == null ? "" : (string) $tmdbId;
+        return $this;
+    }
+
+    /**
+    * Get imdb_id
+    * @return
+    */
+    public function getImdbId()
+    {
+        return $this->imdb_id;
+    }
+
+    /**
+    * Set imdb_id
+    * @return $this
+    */
+    public function setImdbId($imdbId)
+    {
+        $this->imdb_id = $imdbId == null ? "" : (string) $imdbId;
         return $this;
     }
 

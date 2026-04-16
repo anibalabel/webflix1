@@ -383,6 +383,21 @@ class SerieController extends Controller
             $serie->setComment(true);
             $serie->setEnabled(true);
             $serie->setYear($year);
+            $serie->setTmdbId($id);
+
+            $imdbId = "";
+            $curl_external = curl_init("https://api.themoviedb.org/3/tv/".$id."/external_ids?api_key=".$setting->getThemoviedbkey()."&language=".$setting->getThemoviedblang());
+            curl_setopt($curl_external, CURLOPT_FAILONERROR, true);
+            curl_setopt($curl_external, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($curl_external, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl_external, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($curl_external, CURLOPT_SSL_VERIFYPEER, false);
+            $result_external = curl_exec($curl_external);
+            $external_ids = json_decode($result_external);
+            if (isset($external_ids->imdb_id) && $external_ids->imdb_id != null) {
+                $imdbId = $external_ids->imdb_id;
+            }
+            $serie->setImdbId($imdbId);
 
             // get poster Serie Tv image 
 
@@ -464,12 +479,12 @@ class SerieController extends Controller
 
              foreach ($detail_poster->seasons as $key => $s) {
                 $season = new Season();
+                $max_season++;
                 $season->setPosition($max_season);
                 $season->setPoster($serie);
                 $season->setTitle($s->name);
                 $em->persist($season);
                 $em->flush();  
-                $max_season++;
             }
              $this->addFlash('success', 'Operation has been done successfully');
              return $this->redirect($this->generateUrl('app_serie_import_keywords',array("id"=>$id,"serie"=>$serie->getId())));

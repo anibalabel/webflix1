@@ -36,6 +36,7 @@
 							<label class="control-label">Episode title</label>
 							<br>
 							<input type="hidden" id="season_id" value="{{season.title}}">
+							<input type="hidden" id="season_position" value="{{season.position}}">
 							<input type="hidden" id="serie_name" value="{{season.poster.title}}">
 							<input type="hidden" name="image_url" id="episode_image" >
 							{{form_widget(form.title,{"attr":{"class":"form-control search-input"}})}} 
