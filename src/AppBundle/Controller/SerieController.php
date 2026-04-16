@@ -168,7 +168,17 @@ class SerieController extends Controller
             ->getForm();
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-                $curl_season = curl_init("https://api.themoviedb.org/3/tv/".$id."/season/".$seasonObj->getPosition()."?api_key=".$setting->getThemoviedbkey()."&language=".$setting->getThemoviedblang());
+                $tmdbSeasonNumber = (int) $seasonObj->getPosition();
+                if ($tmdbSeasonNumber <= 0) {
+                    $title = $seasonObj->getTitle();
+                    if ($title != null && preg_match('/\d+/', $title, $m)) {
+                        $tmdbSeasonNumber = (int) $m[0];
+                    }
+                }
+                if ($tmdbSeasonNumber <= 0) {
+                    $tmdbSeasonNumber = 1;
+                }
+                $curl_season = curl_init("https://api.themoviedb.org/3/tv/".$id."/season/".$tmdbSeasonNumber."?api_key=".$setting->getThemoviedbkey()."&language=".$setting->getThemoviedblang());
                 curl_setopt($curl_season, CURLOPT_FAILONERROR, true);
                 curl_setopt($curl_season, CURLOPT_FOLLOWLOCATION, true);
                 curl_setopt($curl_season, CURLOPT_RETURNTRANSFER, true);
@@ -216,11 +226,18 @@ class SerieController extends Controller
                     $em->persist($episode);
                     $em->flush();  
                 }
-             if ($poster->getSeasons()[$seasonObj->getPosition()+1] != null ) {
-                   return $this->redirect($this->generateUrl('app_serie_import_episodes',array("id"=>$id,"serie"=>$poster->getId(),"season"=>$poster->getSeasons()[$seasonObj->getPosition()+1]->getId())));
-             }else{
-                 return $this->redirect($this->generateUrl('app_serie_import_done',array("id"=>$id,"serie"=>$poster->getId())));
-             }
+            $seasons = $poster->getSeasons();
+            $currentIndex = null;
+            foreach ($seasons as $idx => $s) {
+                if ($s->getId() === $seasonObj->getId()) {
+                    $currentIndex = $idx;
+                    break;
+                }
+            }
+            if ($currentIndex !== null && isset($seasons[$currentIndex + 1])) {
+                return $this->redirect($this->generateUrl('app_serie_import_episodes',array("id"=>$id,"serie"=>$poster->getId(),"season"=>$seasons[$currentIndex + 1]->getId())));
+            }
+            return $this->redirect($this->generateUrl('app_serie_import_done',array("id"=>$id,"serie"=>$poster->getId())));
         }
        return $this->render("AppBundle:Serie:import_episodes.html.twig",array("setting"=>$setting,"poster"=>$poster,"season"=>$seasonObj,"form"=>$form->createView()));
 
@@ -265,11 +282,13 @@ class SerieController extends Controller
                 $em->flush();
              }
              $this->addFlash('success', 'Operation has been done successfully');
-             if ($poster->getSeasons()[0] != null ) {
-                   return $this->redirect($this->generateUrl('app_serie_import_episodes',array("id"=>$id,"serie"=>$poster->getId(),"season"=>$poster->getSeasons()[0]->getId())));
-             }else{
-                 return $this->redirect($this->generateUrl('app_serie_import_done',array("id"=>$id,"serie"=>$poster->getId())));
+             $seasons = $poster->getSeasons();
+             foreach ($seasons as $s) {
+                 if ($s->getPosition() > 0) {
+                     return $this->redirect($this->generateUrl('app_serie_import_episodes',array("id"=>$id,"serie"=>$poster->getId(),"season"=>$s->getId())));
+                 }
              }
+             return $this->redirect($this->generateUrl('app_serie_import_done',array("id"=>$id,"serie"=>$poster->getId())));
 
         }
        return $this->render("AppBundle:Serie:import_trailer.html.twig",array("setting"=>$setting,"poster"=>$poster,"form"=>$form->createView()));
@@ -470,21 +489,19 @@ class SerieController extends Controller
             $em->persist($serie);
             $em->flush();
 
-           
-            $max_season=0;
-            $last_season=$em->getRepository('AppBundle:Season')->findOneBy(array("poster"=>$serie),array("position"=>"desc"));
-            if ($last_season != null) {
-                $max_season = $last_season->getPosition();
-            }
-
-             foreach ($detail_poster->seasons as $key => $s) {
+            foreach ($detail_poster->seasons as $key => $s) {
+                if (!isset($s->season_number) || $s->season_number === null) {
+                    continue;
+                }
+                if ((int) $s->season_number === 0) {
+                    continue;
+                }
                 $season = new Season();
-                $max_season++;
-                $season->setPosition($max_season);
+                $season->setPosition((int) $s->season_number);
                 $season->setPoster($serie);
                 $season->setTitle($s->name);
                 $em->persist($season);
-                $em->flush();  
+                $em->flush();
             }
              $this->addFlash('success', 'Operation has been done successfully');
              return $this->redirect($this->generateUrl('app_serie_import_keywords',array("id"=>$id,"serie"=>$serie->getId())));
