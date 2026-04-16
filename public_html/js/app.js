@@ -160,12 +160,30 @@
       data: d,
       url: apiurl,
       success: function(result) {
+        var posterOriginal = result.Poster;
+        var posterSafe = posterOriginal;
+        if (posterSafe && posterSafe !== "N/A") {
+          // Some OMDb/Amazon links come with non-existent sizes like SX1000.
+          posterSafe = posterSafe
+            .replace(/_V1_SX\d+/i, "_V1_SX300")
+            .replace(/_V1_SY\d+/i, "_V1_SY450");
+        }
         $("#episode_title").val(result.Title);
         $("#episode_description").val(result.Plot);
         $("#episode_classification").val(result.Rated);
         $("#episode_duration").val(result.Runtime);
-        $("#img-preview-1").attr("src", result.Poster.replace("300", "1000"));
-        $("#episode_image").val(result.Poster.replace("300", "1000"));
+        if (!posterOriginal || posterOriginal === "N/A") {
+          $("#img-preview-1").attr("src", "img/image_placeholder.jpg");
+          $("#episode_image").val("");
+        } else {
+          $("#img-preview-1")
+            .off("error.posterFallback")
+            .on("error.posterFallback", function() {
+              $(this).attr("src", "img/image_placeholder.jpg");
+            })
+            .attr("src", posterSafe);
+          $("#episode_image").val(posterSafe);
+        }
         $("#div1").hide();
       }
     });
